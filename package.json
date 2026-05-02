@@ -1,0 +1,13 @@
+{
+  "name": "lasso-archive",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "package": "node scripts/package.mjs",
+    "test": "node scripts/verify.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

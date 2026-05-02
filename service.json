@@ -1,134 +1,56 @@
 {
-  "id": "echo-service",
-  "name": "Echo Service",
-  "description": "Minimal sample service used to prove the service-template contract.",
+  "id": "@archive",
+  "name": "Archive Utility Provider",
+  "description": "Optional release-backed 7-Zip archive utility provider for Service Lasso services that need formats beyond built-in zip/tar.gz/tgz extraction.",
+  "version": "7zip-26.01",
+  "role": "provider",
   "enabled": true,
-  "version": "0.1.0",
-  "logoutput": true,
-  "icon": [
+  "executable": "7zz",
+  "args": ["i"],
+  "globalenv": {
+    "ARCHIVE_HOME": "${SERVICE_ARTIFACT_ROOT}",
+    "ARCHIVE_TOOL": "${SERVICE_ARTIFACT_COMMAND}",
+    "SEVENZIP_HOME": "${SERVICE_ARTIFACT_ROOT}",
+    "SEVENZIP": "${SERVICE_ARTIFACT_COMMAND}"
+  },
+  "urls": [
     {
-      "provider": "lucide",
-      "name": "terminal"
+      "label": "7-Zip",
+      "url": "https://www.7-zip.org/download.html",
+      "kind": "external"
     }
   ],
-  "servicetype": 50,
-  "servicelocation": 10,
-  "logo": [],
-  "logs": {
-    "default": {
-      "path": "logs/echo-service.log"
-    }
-  },
-  "meta": {
-    "developers": [
-      {
-        "name": "Service Lasso contributors"
-      }
-    ],
-    "license": "Apache-2.0",
-    "repository": {
-      "type": "git",
-      "url": "https://github.com/service-lasso/service-template.git"
-    },
-    "websiteUrl": "https://github.com/service-lasso/service-template",
-    "documentationUrl": "https://github.com/service-lasso/service-template/blob/main/README.md",
-    "issuesUrl": "https://github.com/service-lasso/service-template/issues",
-    "support": {
-      "issuesUrl": "https://github.com/service-lasso/service-template/issues"
-    },
-    "links": {
-      "repository": "https://github.com/service-lasso/service-template",
-      "issues": "https://github.com/service-lasso/service-template/issues",
-      "documentation": "https://github.com/service-lasso/service-template/blob/main/README.md"
-    },
-    "tags": [
-      "service-lasso",
-      "template",
-      "example-service"
-    ]
-  },
   "artifact": {
     "kind": "archive",
     "source": {
       "type": "github-release",
-      "repo": "service-lasso/service-template",
+      "repo": "service-lasso/lasso-archive",
       "channel": "latest"
     },
     "platforms": {
       "win32": {
-        "assetName": "echo-service-win32.zip",
+        "assetName": "lasso-archive-7zip-26.01-win32.zip",
         "archiveType": "zip",
-        "command": "./echo-service.exe",
-        "args": []
-      },
-      "darwin": {
-        "assetName": "echo-service-darwin.tar.gz",
-        "archiveType": "tar.gz",
-        "command": "./echo-service",
-        "args": []
+        "command": ".\\bin\\7za.exe",
+        "args": ["i"]
       },
       "linux": {
-        "assetName": "echo-service-linux.tar.gz",
+        "assetName": "lasso-archive-7zip-26.01-linux.tar.gz",
         "archiveType": "tar.gz",
-        "command": "./echo-service",
-        "args": []
+        "command": "./bin/7zz",
+        "args": ["i"]
       },
-      "default": {
-        "assetName": "echo-service-win32.zip",
-        "archiveType": "zip",
-        "command": "./echo-service.exe",
-        "args": []
+      "darwin": {
+        "assetName": "lasso-archive-7zip-26.01-darwin.tar.gz",
+        "archiveType": "tar.gz",
+        "command": "./bin/7zz",
+        "args": ["i"]
       }
     }
   },
-  "actions": {
-    "install": {
-      "description": "Acquire or unpack the packaged echo-service runtime artifact.",
-      "mode": "converge-install",
-      "idempotent": true
-    },
-    "config": {
-      "description": "Materialize deployment-local echo-service config and env values.",
-      "mode": "converge-config",
-      "idempotent": true
-    },
-    "update": {
-      "description": "Apply a newer release artifact and reconcile update-time changes before restart.",
-      "mode": "converge-update",
-      "idempotent": true
-    },
-    "start": {
-      "description": "Start the sample echo service.",
-      "mode": "runtime-start",
-      "idempotent": true
-    },
-    "stop": {
-      "description": "Stop the sample echo service gracefully.",
-      "mode": "runtime-stop",
-      "idempotent": true
-    },
-    "restart": {
-      "description": "Restart the sample echo service after config or update changes.",
-      "mode": "runtime-restart",
-      "idempotent": false
-    },
-    "rollback": {
-      "description": "Restore the previously deployed artifact if an update fails validation.",
-      "mode": "state-rollback",
-      "idempotent": false
-    }
-  },
-  "execconfig": {
-    "serviceorder": 100,
-    "serviceport": 0,
-    "execcwd": "runtime",
-    "executable": "echo-service",
-    "env": {
-      "ECHO_MESSAGE": "hello from service-template"
-    },
-    "depend_on": [],
-    "healthcheck": {
-      "type": "process"
-    }
+  "updates": {
+    "mode": "notify",
+    "track": "latest",
+    "checkInterval": "P7D"
   }
 }
