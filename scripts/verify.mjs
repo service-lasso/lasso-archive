@@ -16,6 +16,23 @@ function assert(condition, message) {
   }
 }
 
+function assertHealthchecksContract(manifest) {
+  assert(!Object.hasOwn(manifest, "healthcheck"), "Manifest must not use singular healthcheck.");
+
+  if (!Object.hasOwn(manifest, "healthchecks")) {
+    return;
+  }
+
+  assert(Array.isArray(manifest.healthchecks), "Manifest healthchecks must be an array.");
+  const ids = new Set();
+  for (const [index, check] of manifest.healthchecks.entries()) {
+    assert(check && typeof check === "object" && !Array.isArray(check), `Healthcheck ${index} must be an object.`);
+    assert(typeof check.id === "string" && check.id.trim() !== "", `Healthcheck ${index} must include a stable id.`);
+    assert(!ids.has(check.id), `Duplicate healthcheck id: ${check.id}`);
+    ids.add(check.id);
+  }
+}
+
 function run(command, args, options = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
@@ -97,6 +114,7 @@ const manifest = JSON.parse(await readFile(path.join(repoRoot, "service.json"), 
 assert(manifest.id === "@archive", `Unexpected service id: ${manifest.id}`);
 assert(manifest.role === "provider", "Archive service must be a provider.");
 assert(manifest.version === `7zip-${version}`, `Unexpected manifest version: ${manifest.version}`);
+assertHealthchecksContract(manifest);
 assert(manifest.artifact?.source?.repo === "service-lasso/lasso-archive", "Manifest must point at lasso-archive releases.");
 assert(manifest.artifact?.source?.channel === "latest", "Archive provider should track latest releases for update checks.");
 assert(manifest.updates?.mode === "notify", "Archive provider should use notify-only update policy.");
