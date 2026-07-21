@@ -4,6 +4,8 @@ Release-backed optional archive utility provider for Service Lasso.
 
 `lasso-archive` packages the official 7-Zip console tools as the `@archive` provider. Service Lasso core does not need this provider for normal release artifacts that use `zip`, `tar.gz`, or `tgz`; those are handled by the runtime's built-in extraction path. Use `@archive` only when a consuming service needs external archive tooling for formats such as `7z`, `rar`, `xz`, split archives, or legacy install flows.
 
+Service Lasso-created archive artifacts default to `.7z`. The packaged provider includes `SERVICE-LASSO-PROVIDER-CONTRACT.json`, a machine-readable contract that names the supported archive operations, default argument shapes, success metadata fields, and deterministic failure codes for core backup, export, and restore flows.
+
 ## Service Contract
 
 - Service id: `@archive`
@@ -18,8 +20,22 @@ Exported global env:
 | --- | --- |
 | `ARCHIVE_HOME` | installed artifact root |
 | `ARCHIVE_TOOL` | installed platform command |
+| `ARCHIVE_PROVIDER_CONTRACT` | path to `SERVICE-LASSO-PROVIDER-CONTRACT.json` in the installed artifact root |
 | `SEVENZIP_HOME` | installed artifact root |
 | `SEVENZIP` | installed platform command |
+
+## Provider Operations
+
+Core resolves `@archive`, reads `ARCHIVE_TOOL`, and invokes the installed command only after Service Lasso has validated source and destination workspace boundaries. The provider contract documents these operations:
+
+| Operation | Default argv shape | Notes |
+| --- | --- | --- |
+| `create` | `a <archivePath> <sourcePath...> -t7z -y` | Creates a `.7z` archive from validated files/folders and returns format, size, checksum, and provider version metadata where practical. |
+| `extract` | `x <archivePath> -o<targetDirectory> -y` | Extracts into a validated target folder for restore or validation flows. |
+| `list` | `l <archivePath>` | Lists archive entries where the format supports it. |
+| `test` | `t <archivePath>` | Verifies archive readability/integrity where the format supports it. |
+
+Deterministic failure codes exposed by the contract are `archive.source_not_found`, `archive.invalid_or_unreadable`, `archive.unsupported_platform`, and `archive.provider_unavailable`. Core owns host path policy and redaction; archive encryption/password features are not authorization.
 
 ## Release Artifacts
 

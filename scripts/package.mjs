@@ -8,6 +8,57 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const archiveVersion = process.env.ARCHIVE_VERSION ?? "26.01";
 const targetPlatform = process.env.TARGET_PLATFORM ?? process.platform;
 
+export function providerContractForVersion(version = archiveVersion) {
+  return {
+  contractVersion: "service-lasso.archive-provider.v1",
+  serviceId: "@archive",
+  provider: "lasso-archive",
+  upstream: {
+    vendor: "7-Zip",
+    repo: "ip7z/7zip",
+    version,
+  },
+  defaultFormat: "7z",
+  commandEnv: "ARCHIVE_TOOL",
+  supportedFormats: ["7z", "zip", "tar", "gzip", "bzip2", "xz", "rar"],
+  operations: {
+    create: {
+      description: "Create an archive from one or more Service Lasso-validated source paths.",
+      argv: ["a", "<archivePath>", "<sourcePath...>", "-t7z", "-y"],
+      returns: ["archivePath", "format", "sizeBytes", "sha256", "providerVersion"],
+    },
+    extract: {
+      description: "Extract an archive into a Service Lasso-validated target directory.",
+      argv: ["x", "<archivePath>", "-o<targetDirectory>", "-y"],
+      returns: ["targetDirectory", "format", "providerVersion"],
+    },
+    list: {
+      description: "List archive entries for preview and restore validation where the format supports it.",
+      argv: ["l", "<archivePath>"],
+      returns: ["entries", "format", "providerVersion"],
+    },
+    test: {
+      description: "Verify archive readability/integrity where the format supports it.",
+      argv: ["t", "<archivePath>"],
+      returns: ["ok", "format", "providerVersion"],
+    },
+  },
+  failureCodes: {
+    missingSource: "archive.source_not_found",
+    badArchive: "archive.invalid_or_unreadable",
+    unsupportedPlatform: "archive.unsupported_platform",
+    providerUnavailable: "archive.provider_unavailable",
+  },
+  safety: {
+    pathPolicyOwner: "service-lasso-core",
+    noSecretsInLogs: true,
+    encryptionIsNotAuthorization: true,
+  },
+  };
+}
+
+export const providerContract = providerContractForVersion();
+
 export const targets = {
   win32: {
     upstreamAsset: "7z2601-extra.7z",
@@ -170,10 +221,16 @@ export async function packageArchive(platform = targetPlatform, version = archiv
         arch: "x64",
         command: target.command,
         distribution: "7-Zip console tools",
+        providerContract: "SERVICE-LASSO-PROVIDER-CONTRACT.json",
       },
       null,
       2,
     )}\n`,
+    "utf8",
+  );
+  await writeFile(
+    path.join(packageRoot, "SERVICE-LASSO-PROVIDER-CONTRACT.json"),
+    `${JSON.stringify(providerContractForVersion(version), null, 2)}\n`,
     "utf8",
   );
 
