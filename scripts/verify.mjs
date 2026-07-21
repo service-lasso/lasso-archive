@@ -4,7 +4,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { assetName, packageArchive, targets } from "./package.mjs";
+import { assetName, packageArchive, providerContract, targets } from "./package.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const version = process.env.ARCHIVE_VERSION ?? "26.01";
@@ -87,6 +87,18 @@ async function smokeCurrentPlatform(artifact, platform) {
   assert(metadata.upstream?.version === version, `Unexpected upstream version: ${JSON.stringify(metadata)}`);
   assert(metadata.packagedBy === "service-lasso/lasso-archive", `Unexpected packager: ${JSON.stringify(metadata)}`);
   assert(metadata.platform === platform, `Unexpected platform: ${JSON.stringify(metadata)}`);
+  assert(metadata.providerContract === "SERVICE-LASSO-PROVIDER-CONTRACT.json", `Unexpected provider contract pointer: ${JSON.stringify(metadata)}`);
+
+  const contract = JSON.parse(await readFile(path.join(extractRoot, "SERVICE-LASSO-PROVIDER-CONTRACT.json"), "utf8"));
+  assert(contract.contractVersion === "service-lasso.archive-provider.v1", `Unexpected provider contract version: ${JSON.stringify(contract)}`);
+  assert(contract.serviceId === "@archive", `Unexpected provider contract serviceId: ${JSON.stringify(contract)}`);
+  assert(contract.defaultFormat === "7z", `Unexpected default archive format: ${JSON.stringify(contract)}`);
+  assert(contract.commandEnv === "ARCHIVE_TOOL", `Unexpected provider command env: ${JSON.stringify(contract)}`);
+  for (const operation of ["create", "extract", "list", "test"]) {
+    assert(Array.isArray(contract.operations?.[operation]?.argv), `Missing provider operation contract for ${operation}.`);
+  }
+  assert(contract.operations.create.argv.includes("-t7z"), "Create operation must default Service Lasso-created archives to .7z.");
+  assert(contract.failureCodes.providerUnavailable === "archive.provider_unavailable", "Provider contract must define deterministic unavailable failure code.");
 
   const info = await run(command, ["i"], { cwd: extractRoot });
   const output = `${info.stdout}\n${info.stderr}`;
@@ -121,6 +133,8 @@ assert(manifest.updates?.mode === "notify", "Archive provider should use notify-
 for (const key of ["ARCHIVE_HOME", "ARCHIVE_TOOL", "SEVENZIP_HOME", "SEVENZIP"]) {
   assert(typeof manifest.globalenv?.[key] === "string", `Missing globalenv ${key}`);
 }
+assert(typeof manifest.globalenv?.ARCHIVE_PROVIDER_CONTRACT === "string", "Missing globalenv ARCHIVE_PROVIDER_CONTRACT");
+assert(providerContract.contractVersion === "service-lasso.archive-provider.v1", "Package script provider contract export changed unexpectedly.");
 
 const artifacts = [];
 for (const platform of platforms) {
